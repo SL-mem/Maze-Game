@@ -1,0 +1,312 @@
+from CONFIGS import *     # Importation du fichier CONFIGS.py
+import turtle     # Importation du module turtle
+turtle.hideturtle()     # Fonction prédéfinie du module turtle permettant de cacher la tortue
+turtle.speed(0)     # Fonction prédéfinie du modeul turtle permettant de choisir la vitesse du traçage
+turtle.tracer(0)     # Fonction prédéfinie du module turtle permettant d'activer les animations et 0 est la vitesse maximale (tps de raffraichissement)
+
+def calculer_pas():
+    """
+    Fonction permettant de calculer la taille à donner aux cases du plan pour que le labyrinthe puisse être placé dans le plan.
+    Cette fonction permet de prendre la plus petite valeur nécessaire à la taille du carré(choisir la plus petite valeur
+        entre le quotient de la hauteur du plan avec le nombre de colonnes et le quotient de la largeur du plan avec le nombre de lignes.
+    :return: la taille des cases
+    """
+    global matrice
+    nombre_de_lignes = len(matrice)
+    nombre_de_colonnes = len(matrice[1])
+    if (ZONE_PLAN_MAXI[0] - ZONE_PLAN_MINI[0]) / nombre_de_colonnes < (ZONE_PLAN_MAXI[1] - ZONE_PLAN_MINI[1]) / nombre_de_lignes: # abscisse et ordonne
+        return (ZONE_PLAN_MAXI[0] - ZONE_PLAN_MINI[0]) / nombre_de_colonnes    # Cas où le quotient de la largeur du plan par le nombres de colonnes est la plus petite valeur
+    if (ZONE_PLAN_MAXI[0] - ZONE_PLAN_MINI[0]) / nombre_de_colonnes > (ZONE_PLAN_MAXI[1] - ZONE_PLAN_MINI[1]) / nombre_de_lignes:
+        return (ZONE_PLAN_MAXI[1] - ZONE_PLAN_MINI[1]) / nombre_de_lignes     # Cas où le quotient de la hauteur du plan par le nombres de lignes est la plus petite valeur
+
+def coordonnees(case, pas):
+    """
+    Fonction permettant de calcuer les coordonnées du coin inférieur gauche d’une case définie par ses numéros de ligne et de colonne en coordonnées pixel turtle.
+    :param case: en tuple, le numéro de ligne et le numéro de colonne de la case
+    :param pas: taille d'une case obtenue par le biais de la fonction calculer_pas
+    :return: les coordonnées en pixel turtle du coin inférieur gauche d'une case
+    """
+    a, b = case     # a est le numéro de colonne de la case et b son numéro de ligne
+    a_turtle = ZONE_PLAN_MINI[0] + (b * pas)     # la coin inférieur gauche du plan additionné par le nombre de case en colonne
+    b_turtle = (ZONE_PLAN_MAXI[1] - pas) - (a * pas)     # le coin supérieur droit du plan soustrait par le nombre de case en ligne  - pas car pour que ca prenne le point en bas a gauche de la case
+    return a_turtle, b_turtle
+
+def tracer_carre(dimension):
+    """
+    Fonction qui trace un carré de cote dimension reçu en argument.
+    :param dimension: taille du carré
+    :return: le traçage du carré
+    """
+    turtle.forward(dimension - 2)     # traçage du segment de longueur dimension et (dimension - 2) pour chaque segment du carré afin de faire apparaître le quadrillage.(dimension - 2) pour chaque segment du carré afin de faire apparaître le quadrillage.
+    turtle.left(90)     # changement de direction de 90° pour tracer le segment suivant du carré
+    turtle.forward(dimension - 2)
+    turtle.left(90)
+    turtle.forward(dimension - 2)
+    turtle.left(90)
+    turtle.forward(dimension - 2)
+    turtle.left(90)
+
+def tracer_case(case, couleur, pas):
+    """
+    Fonction permettant de traçer une case d'une couleur, d'une dimension et d'une coordonnées donneés
+    :param case: les numéros de ligne et de colonne de la case à tracer
+    :param couleur: la couleur de la case à tracer
+    :param pas: la dimenson de la case
+    :return: traçage de la case
+    """
+    coord = coordonnees(case, pas)     # transformation de la coordonnée de la case en coordonnées pixel turtle
+    turtle.up()     # la tortue se lève pour ne plus rien tracer
+    turtle.goto(coord)     # la tortue se rend aux coordonnées du coin inférieur gauche de la case(coordonnées pixel turtle)
+    turtle.color(couleur)     # imposition de la couleur de la case
+    turtle.down()     # la tortue redescend et son traçage sera désormais visible
+    turtle.begin_fill()     # les traçage suivant seront de la couleur imposé, ici la case
+    tracer_carre(pas)     # traçage du périmètre de la case avec l'appel à la fonction qui dessine un carré
+    turtle.end_fill()     # dés à présent plus rien ne sera colorié
+    turtle.up()     # la tortue remonte pour ne plus rien tracer
+
+def afficher_plan():
+    """
+    Fonction qui affiche le plan(labyrinthe).
+    :return: affiche le plan en respectant la couleur, la dimension et les coordonnées des cases demandées
+    """
+    global matrice
+    pas = calculer_pas()     # dimension de toutes les cases
+    k = 0
+    for i in matrice:     # pour chaque ligne de la matrice, ce qui suit est executé
+        for j in i:     # pour chaque colonne dans une ligne, ce qui suit est executé
+            if j == 0:  # index = ordre de la matrice (ex ds i = 0 == ordre matrice 0 )   int car sinn c est en string
+                tracer_case((int(matrice.index(i)), k), COULEUR_CASES, pas)     # si le numéro correspondant à la case est 0, une case de couleur blanche est tracé
+            if j == 1:
+                tracer_case((int(matrice.index(i)), k), COULEUR_MUR, pas)     # si le numéro correspondant à la case est 1, une case de couleur noire est tracé
+            if j == 2:
+                tracer_case((int(matrice.index(i)), k), COULEUR_OBJECTIF, pas)     # si le numéro correspondant à la case est 2, une case de couleur jaune est tracé
+            if j == 3:
+                tracer_case((int(matrice.index(i)), k), COULEUR_PORTE, pas)     # si le numéro correspondant à la case est 3, une case de couleur orange est tracé
+            if j == 4:
+                tracer_case((int(matrice.index(i)), k), COULEUR_OBJET, pas)     # si le numéro correspondant à la case est 4, une case de couleur verte est tracé
+            k += 1
+        k = 0     # initialise apres chque ligne
+
+def transfo_matrice(fichier):
+    """
+    Fonction transformant un fichier en une matrice.
+    :param fichier: un fichier comportant une matrice
+    :return: une liste de listes (matrice)
+    """
+    res = []     # liste vide
+    with open(fichier, encoding="utf-8") as f:     # ouverture du fichier        utf8 pour les accents
+        for r in f:     # pour chaque ligne, ce qui suit est executé
+            sal = []     # liste vide        sal represente une ligne a la fin
+            for x in r.split():     # pour chaque valeur de r, ce qui suit est executé       split enleve les espaces
+                sal.append(int(x))     # ajout de la valeur x dans la liste sal (ajout d une case a la ligne)
+            res.append(sal)     # ajout de la liste sal dans la liste res    (ajout des lignes a la suite des lignes)
+    return res     # retour de la liste res
+
+def creer_dictionnaire(fichier):
+    """
+    Fonction transformant un fichier en dictionnaire
+    :param fichier: fichier qu'il faut transformer
+    :return: un dictionnaire
+    """
+    dictio = {}     # un dictionnaire vide au départ
+    for ligne in open(fichier, encoding="utf_8"):     # pour chaque ligne dans le fichier, ce qui suit est executé
+        a, b = eval(ligne)     # a vaut la première partie de la ligne et b la seconde     (eval associe a a et b le premier et le second elem de la ligne qui est un tuple)
+        dictio[a] = b     # pour chaque a et b, il y a a:b dans le dico
+    return dictio
+
+
+def ramasser_objet(position, mouvement):
+    """
+    Fonction qui retire l'objet du plan et le rajoute à l'inventaire
+    :param position: la position de l'objet
+    :param mouvement: mouvement executé
+    :return: écriture du texte de l'objet dans l'inventaire
+    """
+    global c     # variable globale
+    matrice[position[0] + mouvement[0]][position[1] + mouvement[1]] = 0     # transforme la case objet en case vide dans la matrice         position pos actuelle et mouvement est le deplacement premiere partie c est pour la ligne et 2eme colonne  et 0 pour case blanche(ds le plan comme ca fait rien qd on revient) donc objet disparaoit
+    x, y = position
+    tracer_case((x, y), COULEUR_VUE, calculer_pas())     # transforme la case objet en case trajectoire sur le plan
+    x += mouvement[0]      # deplacement
+    y += mouvement[1]
+    c = x, y     # actualise la case position    c nouvelle position
+    tracer_case(c, COULEUR_CASES, calculer_pas())     # traçage d'une case blanche
+    turtle.goto(coordonnees(c, calculer_pas())[0] + (calculer_pas() - 1) / 2,         #div par 2 pour centrer le dot jusqu au 0 c est abscisse de la coordonnee donc turtle va au centre de la case pour le dot
+                coordonnees(c, calculer_pas())[1] + (calculer_pas() - 1) / 2)
+    turtle.dot((RATIO_PERSONNAGE * calculer_pas() - 1), "red")     # dessin du personnage
+    objet = "".join(('N°', str(len(inventaire) + 1), " ", ":", " ", creer_dictionnaire(fichier_objets)[c]))     # texte venant du dictionnaire       join met tt(un tuple) ensemble et en string    guillement vide = espace donc tt ensemble tt est pas colle il y a espace entre chque truv     c position objet pour afficher l objet    apres N c est numero de l indice
+    inventaire.add(objet)     # addition du texte à l'ensemble inventaire
+    turtle.color("black")
+    turtle.goto(POINT_AFFICHAGE_INVENTAIRE[0], POINT_AFFICHAGE_INVENTAIRE[1] - 10 - (len(inventaire)) * 20)     # lieu du texte                len inventaire *20 pcq on doit tt le tps descendre pour noter le suivant
+    turtle.write("• " + objet, font=("Arial", 9, "bold"))     # écriture du texte
+
+def cadre():
+    """
+    Fonction qui sert à dessiner un cadre autour des annonces
+    """
+    turtle.goto(POINT_AFFICHAGE_ANNONCES[0] - 10, POINT_AFFICHAGE_ANNONCES[1] + 40)
+    turtle.color("black")
+    turtle.down()
+    turtle.forward(520)
+    turtle.right(90)
+    turtle.forward(50)
+    turtle.right(90)
+    turtle.forward(520)
+    turtle.right(90)
+    turtle.forward(50)
+    turtle.right(90)
+    turtle.up()
+
+def poser_question(position, mouvement):
+    """
+    :param position: la position
+    :param mouvement: le mouvement en tuple du personnage
+    :return: un texte dans annonce et manipulation des portes
+    """
+    v = (c[0] + mouvement[0], c[1] + mouvement[1])     # position du dot = c  change tt le tps       v case objectif(c est pr tester car on sait pas si le c change car ca dpd si la quest est bien rep)
+    effacer()  # appel à la fonction effacer     ammene un gros carre
+    turtle.goto(POINT_AFFICHAGE_ANNONCES[0], POINT_AFFICHAGE_ANNONCES[1])  # lieu du texte
+    turtle.color("black")
+    turtle.write("Cette porte est fermée.", font=("Arial", 11, "bold"))  # écriture du texte
+    if turtle.textinput("Question", str(creer_dictionnaire(fichier_questions)[v][0])) == str(
+            creer_dictionnaire(fichier_questions)[v][1]):          #si question egale rep
+        effacer()
+        turtle.goto(POINT_AFFICHAGE_ANNONCES[0], POINT_AFFICHAGE_ANNONCES[1])
+        turtle.color("black")
+        turtle.write("La porte s'ouvre.", font=("Arial", 11, "bold"))
+        matrice[position[0] + mouvement[0]][position[1] + mouvement[1]] = 0
+        tracer_case(v, COULEUR_CASES, calculer_pas())
+        deplacer(position, mouvement)
+    else:
+        effacer()
+        turtle.goto(POINT_AFFICHAGE_ANNONCES[0], POINT_AFFICHAGE_ANNONCES[1])     # lieu du texte
+        turtle.color("black")
+        turtle.write("Mauvaise réponse.", font=("Arial", 11, "bold"))      # écriture du texte
+    turtle.listen()     # il est possible désormais d'associer une fonction à une touche
+
+def effacer():
+    """
+    :return: efface le texte déjà écrit
+    """
+    turtle.goto(POINT_AFFICHAGE_ANNONCES[0] - 11, POINT_AFFICHAGE_ANNONCES[1]-10)  # lieu du texte à effacer
+    turtle.color("white")
+    turtle.begin_fill()  # début du coloriage
+    tracer_carre(1000)  # pour cacher le texte précédent
+    turtle.end_fill()  # fin du coloriage
+    cadre()
+
+def victoire(position, mouvement):
+    """
+    :param position: la position de la case et du personnage
+    :param mouvement: mouvement en tuple du personnage
+    :return: un texte dans les annonces lorsque le jeu se termine
+    """
+    v = (c[0] + mouvement[0], c[1] + mouvement[1])   # v =position     on a utilise v et pas que c car on vt tracer cas blanhce avt arrivee
+    effacer()  # appel à la fonction effacer
+    turtle.color("black")
+    turtle.goto(POINT_AFFICHAGE_ANNONCES[0], POINT_AFFICHAGE_ANNONCES[1])  # endroit du texte
+    turtle.write("Bravo! Vous avez Gagné!", font=("Arial", 20, "bold"))  # écriture du texte    bold : gras
+    matrice[position[0] + mouvement[0]][position[1] + mouvement[1]] = 0
+    tracer_case(v, COULEUR_CASES, calculer_pas())     # case objectif sans que le dot arrive pour qu elle soit blanche a l arrivee
+    deplacer(position, mouvement)      #pour se deplacer sur case blanche qui n est plus jaune pour que le dot se deplace pcq on a pas de dot ds cette fct
+    turtle.onkeypress(None, "Left")  # execute rien lorsque la touche "Left" est appuyé    on pt plus bouger
+    turtle.onkeypress(None, "Right")  # execute rien lorsque la touche "Right" est appuyé
+    turtle.onkeypress(None, "Up")  # execute rien lorsque la touche "Up" est appuyé
+    turtle.onkeypress(None, "Down")  # execute rien lorsque la touche "Down" est appuyé
+
+def deplacer(position, mouvement):
+    """
+    :param position: la position du personnage
+    :param mouvement: le mouvement du personnage
+    :return: déplacement du personnage
+    """
+    global c, matrice
+    n = matrice[position[0] + mouvement[0]][position[1] + mouvement[1]]  # la matrice     n est la case ds le plan
+    if n == 1:     # mur
+        return None  # le personnage n'avance plus
+    elif n == 3:
+        poser_question(position, mouvement)  # il y a une porte et pour passer, il faut répondre à la question executé par la fonction poser_question
+    elif n == 4:
+        ramasser_objet(position, mouvement)  # le personnage ramasse l'objet
+    elif n == 2:
+        victoire(position, mouvement)  # le jeu se termine et la fonction victire est executé
+    else:
+        x, y = position
+        tracer_case((x, y), COULEUR_VUE, calculer_pas())  # coloriage de la case dans la couleur du trajet du personnage
+        x += mouvement[0]  # x augmente de la première partie du tuple
+        y += mouvement[1]  # y augmente de la seconde partie du tuple
+        c = x, y
+        turtle.goto(
+            coordonnees(c, calculer_pas())[0] + (calculer_pas() - 1) / 2,
+            coordonnees(c, calculer_pas())[1] + (calculer_pas() - 1) / 2)
+        turtle.dot(RATIO_PERSONNAGE * (calculer_pas() - 1), COULEUR_PERSONNAGE)  # dessin du personnage
+
+def deplacer_gauche():
+    """
+    :return: déplacement vers la gauche
+    """
+    turtle.onkeypress(None, "Left")  # lorsque la touche "Up" est appuyé, il ne se passe rien            SPAM pour pas lancer une 2eme fois la fct cad pdt l execution
+    if c[1] == 0:   # Dans le cas où le joueur se trouve dans la colonne la plus à gauche
+        turtle.onkeypress(deplacer_gauche, "Left")  # la fonction deplacer_gauche est executé lorsque la touche "Left" est appuyé         SPAM
+        return None       # return finit la fonction c est pr ca pas ds onkeypress
+    else:
+        deplacer(c, (0, -1))  # le personnage se retrouve à une nouvelle position
+        turtle.onkeypress(deplacer_gauche, "Left")  # la fonction deplacer_gauche est executé lorsque la touche "Down" est appuyé
+
+def deplacer_droite():
+    """
+    :return: déplacement vers la droite
+    """
+    turtle.onkeypress(None, "Right")  # lorsque la touche "Up" est appuyé, il ne se passe rien
+    if c[1] == len(matrice[0]) - 1:       # Dans le cas où le joueur se trouve dans la colonne la plus à droite
+        turtle.onkeypress(deplacer_droite, "Right")  # la fonction deplacer_droite est executé lorsque la touche "Right" est appuyé
+        return None
+    else:
+        deplacer(c, (0, +1))  # le personnage se retrouve à une nouvelle position
+        turtle.onkeypress(deplacer_droite, "Right")  # la fonction deplacer_droite est executé lorsque la touche "Right" est appuyé
+
+def deplacer_haut():
+    """
+    :return: déplacement vers le haut
+    """
+    turtle.onkeypress(None, "Up")  # lorsque la touche "Up" est appuyé, il ne se passe rien
+    if c[0] == 0:   # Dans le cas où le joueur se trouve dans la ligne la plus en haute
+        turtle.onkeypress(deplacer_haut, "Up")  # la fonction deplacer_haut est executé lorsque la touche "Up" est appuyé
+        return None
+    else:
+        deplacer(c, (-1, 0))  # le personnage se retrouve à une nouvelle position
+        turtle.onkeypress(deplacer_haut, "Up")  # la fonction deplacer_haut est executé lorsque la touche "Up" est appuyé
+
+def deplacer_bas():
+    """
+    :return: déplacement vers le bas
+    """
+    turtle.onkeypress(None, "Down")  # lorsque la touche "Up" est appuyé, il ne se passe rien
+    if c[0] == len(matrice) - 1:    # Dans le cas où le joueur se trouve dans la ligne la plus en basse
+        turtle.onkeypress(deplacer_bas, "Down")  # la fonction deplacer_bas est executé lorsque la touche "Down" est appuyé
+        return None
+    else:
+        deplacer(c, (1, 0))  # le personnage se retrouve à une nouvelle position
+        turtle.onkeypress(deplacer_bas, "Down")  # la fonction deplacer_bas est executé lorsque la touche "Down" est appuyé
+
+matrice = transfo_matrice(fichier_plan)                                # Suite d'instructions d'initialisation du jeu.
+afficher_plan()     # matrice
+turtle.goto(POINT_AFFICHAGE_INVENTAIRE[0], POINT_AFFICHAGE_INVENTAIRE[1]-10)
+turtle.color("black")
+turtle.write("Inventaire :", font=("Arial", 11, "bold"))
+turtle.goto(POINT_AFFICHAGE_ANNONCES[0], POINT_AFFICHAGE_ANNONCES[1]+20)
+turtle.write("Bienvenue preux chevalier. Le temps est venu pour vous de faire vos preuves.", font=("Arial", 10, "bold"))
+turtle.goto(POINT_AFFICHAGE_ANNONCES[0], POINT_AFFICHAGE_ANNONCES[1])
+turtle.write("Quittez ces dédales en vie. Que la Force soit avec vous !", font=("Arial", 10, "bold"))
+cadre()
+turtle.goto(coordonnees(POSITION_DEPART, calculer_pas())[0] + (calculer_pas()-1) / 2,
+            coordonnees(POSITION_DEPART, calculer_pas())[1] + (calculer_pas()-1) / 2)
+turtle.dot(RATIO_PERSONNAGE * (calculer_pas() - 1), COULEUR_PERSONNAGE)
+c = POSITION_DEPART           # position de base mais il fait que changer a chaque deplacement voir fct deplacer
+inventaire = set()               # creation d un ensemble vide inventaire (au debut vide)
+
+turtle.listen()  # le programme peut executer une fonction à l'appuie d'une touche
+turtle.onkeypress(deplacer_droite, "Right")  # la fonction deplacer_bas est executé lorsque la touche "Right" est appuyé
+turtle.onkeypress(deplacer_gauche, "Left")  # la fonction deplacer_bas est executé lorsque la touche "Left" est appuyé
+turtle.onkeypress(deplacer_haut, "Up")  # la fonction deplacer_bas est executé lorsque la touche "Up" est appuyé
+turtle.onkeypress(deplacer_bas, "Down")  # la fonction deplacer_bas est executé lorsque la touche "Down" est appuyé
+turtle.mainloop()  # tout continue en boucle
